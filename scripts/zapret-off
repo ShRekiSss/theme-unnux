@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Выключает zapret и открывает браузер БЕЗ обхода блокировок.
+# Использование:
+#   zapret-off            — выключить zapret и открыть браузер
+#   zapret-off URL        — выключить zapret и открыть URL
+set -uo pipefail
+
+UNIT="zapret_discord_youtube.service"
+ZAPRET_DIR="$HOME/zapret-discord-youtube-linux"
+BROWSER="${BROWSER:-firefox-esr}"
+URL="${1:-}"
+
+notify() {
+    command -v notify-send >/dev/null 2>&1 && notify-send -a "zapret" "$1" "${2:-}"
+}
+
+zapret_running() {
+    systemctl is-active --quiet "$UNIT" 2>/dev/null \
+        || pgrep -f "$ZAPRET_DIR/nfqws" >/dev/null 2>&1
+}
+
+# 1. Остановить сервис (ExecStop сам чистит правила файрвола)
+if zapret_running; then
+    sudo -n systemctl stop "$UNIT" 2>/dev/null \
+        || sudo -n "$ZAPRET_DIR/service.sh" service stop >/dev/null 2>&1 \
+        || sudo systemctl stop "$UNIT"
+fi
+
+# 2. Дождаться, пока уйдёт nfqws (иначе останутся правила без обработчика)
+for _ in $(seq 1 10); do
+    pgrep -f "$ZAPRET_DIR/nfqws" >/dev/null 2>&1 || break
+    sleep 1
+done
+
+# 3. Если процесс завис — добить
+if pgrep -f "$ZAPRET_DIR/nfqws" >/dev/null 2>&1; then
+    sudo -n pkill -f "$ZAPRET_DIR/nfqws" 2>/dev/null
+    sleep 1
+fi
+
+# 4. Проверка
+if systemctl is-active --quiet "$UNIT" 2>/dev/null || pgrep -f "$ZAPRET_DIR/nfqws" >/dev/null 2>&1; then
+    notify "Не удалось выключить zapret" "Проверь: systemctl status $UNIT"
+    echo "ОШИБКА: zapret всё ещё работает."
+    exit 1
+fi
+
+notify "zapret выключен" "Браузер открыт без обхода. Вернуть: ярлык «Включить zapret»."
+
+# 5. Открыть браузер
+if [[ -n "$URL" ]]; then
+    setsid "$BROWSER" "$URL" >/dev/null 2>&1 &
+else
+    setsid "$BROWSER" >/dev/null 2>&1 &
+fi
+exit 0

@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+# Включает zapret обратно.
+# Использование:
+#   zapret-on          — запустить сервис
+#   zapret-on --status — показать состояние
+set -uo pipefail
+
+UNIT="zapret_discord_youtube.service"
+ZAPRET_DIR="$HOME/zapret-discord-youtube-linux"
+
+notify() {
+    command -v notify-send >/dev/null 2>&1 && notify-send -a "zapret" "$1" "${2:-}"
+}
+
+zapret_running() {
+    systemctl is-active --quiet "$UNIT" 2>/dev/null \
+        && pgrep -f "$ZAPRET_DIR/nfqws" >/dev/null 2>&1
+}
+
+if [[ "${1:-}" == "--status" ]]; then
+    if systemctl is-active --quiet "$UNIT" 2>/dev/null; then
+        echo "сервис: активен"
+    else
+        echo "сервис: остановлен"
+    fi
+    if pgrep -f "$ZAPRET_DIR/nfqws" >/dev/null 2>&1; then
+        echo "nfqws:  запущен (pid $(pgrep -f "$ZAPRET_DIR/nfqws" | head -n1))"
+    else
+        echo "nfqws:  нет"
+    fi
+    exit 0
+fi
+
+if zapret_running; then
+    notify "zapret уже включён"
+    echo "zapret уже работает."
+    exit 0
+fi
+
+sudo -n systemctl start "$UNIT" 2>/dev/null \
+    || sudo -n "$ZAPRET_DIR/service.sh" service start >/dev/null 2>&1 \
+    || sudo systemctl start "$UNIT"
+
+for _ in $(seq 1 15); do
+    pgrep -f "$ZAPRET_DIR/nfqws" >/dev/null 2>&1 && break
+    sleep 1
+done
+
+if pgrep -f "$ZAPRET_DIR/nfqws" >/dev/null 2>&1; then
+    notify "zapret включён" "Обход блокировок снова работает."
+    echo "zapret запущен."
+    exit 0
+else
+    notify "zapret не запустился" "Проверь: systemctl status $UNIT"
+    echo "ОШИБКА: nfqws не поднялся."
+    exit 1
+fi

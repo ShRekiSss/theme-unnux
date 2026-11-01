@@ -1,0 +1,83 @@
+{
+  "layer": "top",
+  "position": "bottom",
+  "height": 34,
+  "spacing": 6,
+  "margin-top": 0,
+  "margin-left": 0,
+  "margin-right": 0,
+  "modules-left": ["custom/launcher", "hyprland/workspaces", "hyprland/window"],
+  "modules-center": ["clock"],
+  "modules-right": ["custom/lang", "network", "cpu", "memory", "pulseaudio", "tray", "custom/power"],
+
+  "custom/launcher": {
+    "format": "<span font='JetBrainsMono Nerd Font'>\uf17a</span>",
+    "on-click": "wofi --show drun --width 560 --height 420",
+    "tooltip": false
+  },
+
+  "custom/power": {
+    "format": "<span font='JetBrainsMono Nerd Font'>\uf011</span>",
+    "on-click": "/home/danze/.local/bin/меню-питания.sh",
+    "tooltip": false
+  },
+
+  "network": {
+    "format-wifi": "<span font='JetBrainsMono Nerd Font'>\uf1eb</span> {signalStrength}%",
+    "format-ethernet": "Сеть",
+    "format-linked": "Сеть",
+    "format-disconnected": "Нет сети",
+    "tooltip-format-wifi": "{essid} — {signalStrength}%\n{ipaddr}",
+    "tooltip-format-ethernet": "{ifname}",
+    "on-click": "nm-connection-editor",
+    "interval": 5
+  },
+
+  "custom/lang": {
+    "exec": "/home/danze/.local/bin/раскладка.sh",
+    "interval": 1,
+    "on-click": "hyprctl switchxkblayout all next",
+    "tooltip": false
+  },
+
+  "hyprland/workspaces": {
+    "format": "{name}",
+    "on-click": "activate",
+    "all-outputs": true
+  },
+
+  "hyprland/window": {
+    "format": "{title}",
+    "max-length": 60,
+    "separate-outputs": true
+  },
+
+  "clock": {
+    "format": "{:%H:%M}",
+    "format-alt": "{:%d.%m.%Y  %H:%M}",
+    "tooltip-format": "{:%d %B %Y}"
+  },
+
+  "cpu": {
+    "format": "ЦП {usage}%",
+    "interval": 2
+  },
+
+  "memory": {
+    "format": "ОЗУ {used:0.1f}Г/{total:0.1f}Г",
+    "interval": 3
+  },
+
+  "pulseaudio": {
+    "format": "<span font='JetBrainsMono Nerd Font'>\uf028</span> {volume}%",
+    "format-muted": "<span font='JetBrainsMono Nerd Font'>\uf026</span> выкл",
+    "on-click": "pavucontrol",
+    "on-scroll-up": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+",
+    "on-scroll-down": "wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-"
+  },
+
+  "tray": {
+    "icon-size": 16,
+    "spacing": 8
+  }
+}

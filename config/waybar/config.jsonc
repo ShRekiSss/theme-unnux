@@ -1,0 +1,101 @@
+{
+    "layer": "top",
+    "position": "top",
+    "height": 38,
+    "spacing": 6,
+    "margin-top": 8,
+    "margin-left": 12,
+    "margin-right": 12,
+
+    "modules-left": ["custom/launcher", "hyprland/workspaces", "hyprland/window"],
+    "modules-center": ["clock"],
+    "modules-right": ["tray", "pulseaudio", "network", "cpu", "memory", "temperature", "custom/power"],
+
+    "custom/launcher": {
+        "format": "\uf009",
+        "tooltip": false,
+        "on-click": "wofi --show drun"
+    },
+
+    "hyprland/workspaces": {
+        "format": "{id}",
+        "on-click": "activate",
+        "persistent-workspaces": {
+            "*": 5
+        }
+    },
+
+    "hyprland/window": {
+        "format": "{title}",
+        "max-length": 60,
+        "separate-outputs": true
+    },
+
+    "clock": {
+        "format": "{:%H:%M}",
+        "format-alt": "{:%d %B, %A}",
+        "tooltip-format": "<tt>{calendar}</tt>",
+        "calendar": {
+            "mode": "month",
+            "mode-mon-col": 3,
+            "weeks-pos": "right",
+            "on-scroll": 1,
+            "format": {
+                "months": "<span color='#e8b04b'><b>{}</b></span>",
+                "days": "<span color='#e6dcf5'>{}</span>",
+                "weekdays": "<span color='#a98bd6'><b>{}</b></span>",
+                "today": "<span color='#1a1224' background='#e8b04b'><b>{}</b></span>"
+            }
+        }
+    },
+
+    "pulseaudio": {
+        "format": "{icon} {volume}%",
+        "format-muted": "\uf026 выкл",
+        "format-icons": {
+            "default": ["\uf026", "\uf027", "\uf028"]
+        },
+        "scroll-step": 5,
+        "on-click": "pavucontrol",
+        "tooltip-format": "{desc}"
+    },
+
+    "network": {
+        "format-wifi": "\uf1eb  {essid}",
+        "format-ethernet": "\uf0ac  {ipaddr}",
+        "format-disconnected": "\uf05e  нет сети",
+        "tooltip-format-wifi": "{essid} · {signalStrength}%",
+        "tooltip-format-ethernet": "{ifname} · {ipaddr}",
+        "tooltip-format-disconnected": "Нет подключения",
+        "on-click": "nm-connection-editor",
+        "interval": 5
+    },
+
+    "cpu": {
+        "format": "\uf2db  {usage}%",
+        "interval": 3,
+        "on-click": "kitty -e btop"
+    },
+
+    "memory": {
+        "format": "\uf538  {used:0.1f}/{total:0.1f} ГБ",
+        "interval": 5
+    },
+
+    "temperature": {
+        "format": "\uf2c9  {temperatureC}°C",
+        "critical-threshold": 85,
+        "interval": 5
+    },
+
+    "tray": {
+        "icon-size": 16,
+        "spacing": 10
+    },
+
+    "custom/power": {
+        "format": "\uf011",
+        "tooltip": false,
+        "on-click": "wlogout"
+    }
+}

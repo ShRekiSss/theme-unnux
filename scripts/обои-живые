@@ -1,0 +1,82 @@
+#!/bin/bash
+# Живые обои Hyprland: 4 клипа (Alice Madness x3 + Чеширский кот),
+# случайная ротация каждые 5 минут через ipc mpv (без миганий и перезапусков)
+
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/1000}"
+export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-1}"
+export HYPRLAND_INSTANCE_SIGNATURE="${HYPRLAND_INSTANCE_SIGNATURE:-$(ls /run/user/1000/hypr/ 2>/dev/null | head -1)}"
+
+# защита от двух запусков одновременно (exec-once иногда дублируется)
+exec 9>/tmp/обои-живые.lock
+flock -n 9 || { echo "уже запускается"; exit 0; }
+
+OUT="HDMI-A-2"
+VIDEO_DIR="/home/danze/Обои/анимации"
+SOCK="/tmp/mpvpaper-sock"
+CUR_FILE="/tmp/обои-живые-текущий"
+MPVOPTS="no-audio loop-file=inf hwdec=vaapi panscan=1.0 input-ipc-server=$SOCK"
+
+random_clip() {
+    find "$VIDEO_DIR" -maxdepth 1 -name '*.mp4' | shuf -n 1
+}
+
+pick_other() {
+    local cur="$1" c
+    while :; do
+        c=$(random_clip)
+        [ "$c" != "$cur" ] && break
+    done
+    echo "$c"
+}
+
+start_player() {
+    local video
+    video=$(random_clip)
+    echo "$video" > "$CUR_FILE"
+    rm -f "$SOCK"
+    setsid -f mpvpaper -o "$MPVOPTS" "$OUT" "$video" >/dev/null 2>&1
+}
+
+switch_clip() {
+    local next
+    next=$(pick_other "$(cat "$CUR_FILE" 2>/dev/null)")
+    printf '{"command":["loadfile","%s"],"sync":true}\n' "$next" \
+        | socat - UNIX-CONNECT:"$SOCK" >/dev/null 2>&1
+    echo "$next" > "$CUR_FILE"
+}
+
+case "$1" in
+вкл|on|start)
+    exec 9>/tmp/обои-живые.lock
+    flock -n 9 || { echo "уже запускается"; exit 0; }
+    for pid in $(pgrep -f 'обои-живые-ротация.sh'); do
+        [ "$pid" != "$$" ] && kill "$pid" 2>/dev/null
+    done
+    pkill -f 'обои-слайдшоу.sh' 2>/dev/null
+    rm -f /tmp/обои-живые-rotation.pid
+    pkill -x swww-daemon 2>/dev/null
+    pkill -x mpvpaper 2>/dev/null
+    sleep 0.5
+    start_player
+    setsid -f /home/danze/.local/bin/обои-живые-ротация.sh >/dev/null 2>&1
+    sleep 1
+    if pgrep -x mpvpaper >/dev/null; then
+        echo "живые обои включены ✅ (4 клипа, смена каждые 5 минут)"
+    else
+        echo "не запустилось ❌"
+    fi
+    ;;
+выкл|off|stop)
+    for pid in $(pgrep -f 'обои-живые-ротация.sh'); do
+        [ "$pid" != "$$" ] && kill "$pid" 2>/dev/null
+    done
+    pkill -x mpvpaper 2>/dev/null
+    sleep 0.5
+    # возвращаем режим: статичные картинки со сменой раз в 15 минут
+    setsid -f /home/danze/.local/bin/обои-слайдшоу.sh >/dev/null 2>&1
+    echo "включён режим: статичные обои со сменой раз в 15 минут ✅"
+    ;;
+*)
+    echo "использование: обои-живые вкл | выкл"
+    ;;
+esac

@@ -1,0 +1,128 @@
+#!/usr/bin/env bash
+# Открывает YouTube, гарантируя что zapret (nfqws) запущен.
+# Использование:
+#   zapret-youtube            — проверить/поднять zapret и открыть YouTube
+#   zapret-youtube --check    — только проверить, без открытия браузера
+#   zapret-youtube --status   — показать состояние сервиса и доступность
+set -uo pipefail
+
+ZAPRET_DIR="$HOME/zapret-discord-youtube-linux"
+URL="https://www.youtube.com/"
+BROWSER="${BROWSER:-firefox-esr}"
+WAIT_SECONDS=20
+
+notify() {
+    command -v notify-send >/dev/null 2>&1 && notify-send -a "YouTube" "$1" "${2:-}"
+}
+
+log() { printf '%s\n' "$*"; }
+
+zapret_running() {
+    pgrep -f "$ZAPRET_DIR/nfqws" >/dev/null 2>&1
+}
+
+# 0 — YouTube отвечает, 1 — нет
+youtube_ok() {
+    local code
+    code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 8 "$URL" 2>/dev/null)
+    [[ "$code" == "200" ]]
+}
+
+wait_for_youtube() {
+    local waited=0
+    while (( waited < WAIT_SECONDS )); do
+        if youtube_ok; then
+            return 0
+        fi
+        sleep 1
+        ((waited++))
+    done
+    return 1
+}
+
+start_zapret() {
+    log "zapret не запущен — поднимаю сервис..."
+    sudo -n "$ZAPRET_DIR/service.sh" service start >/dev/null 2>&1 \
+        || sudo "$ZAPRET_DIR/service.sh" service start >/dev/null 2>&1
+    # ждём, пока появится процесс nfqws
+    local i
+    for i in $(seq 1 15); do
+        zapret_running && return 0
+        sleep 1
+    done
+    return 1
+}
+
+restart_zapret() {
+    log "YouTube не отвечает — перезапускаю zapret..."
+    sudo -n "$ZAPRET_DIR/service.sh" service restart >/dev/null 2>&1 \
+        || sudo "$ZAPRET_DIR/service.sh" service restart >/dev/null 2>&1
+    sleep 2
+    zapret_running
+}
+
+open_browser() {
+    log "Открываю YouTube в $BROWSER..."
+    setsid "$BROWSER" "$URL" >/dev/null 2>&1 &
+}
+
+status_report() {
+    if zapret_running; then
+        log "zapret:   запущен (pid $(pgrep -f "$ZAPRET_DIR/nfqws" | head -n1))"
+    else
+        log "zapret:   НЕ запущен"
+    fi
+    if youtube_ok; then
+        log "YouTube:  доступен (HTTP 200)"
+    else
+        log "YouTube:  НЕ отвечает (HTTP $(curl -s -o /dev/null -w '%{http_code}' --max-time 8 "$URL" 2>/dev/null))"
+    fi
+}
+
+case "${1:-}" in
+    --status)
+        status_report
+        exit 0
+        ;;
+    --check)
+        if youtube_ok; then
+            status_report
+            exit 0
+        fi
+        status_report
+        exit 1
+        ;;
+    "" )
+        ;;
+    *)
+        log "Неизвестный аргумент: $1"
+        log "Использование: $(basename "$0") [--check|--status]"
+        exit 2
+        ;;
+esac
+
+# 1. Если zapret не запущен — поднять
+if ! zapret_running; then
+    if ! start_zapret; then
+        notify "zapret не запустился" "Проверь: $ZAPRET_DIR/service.sh service status"
+        log "ОШИБКА: не удалось запустить zapret."
+        exit 1
+    fi
+fi
+
+# 2. Дождаться YouTube
+if ! wait_for_youtube; then
+    # 3. Один перезапуск, затем ещё ожидание
+    if restart_zapret && wait_for_youtube; then
+        :
+    else
+        notify "YouTube не открывается" "zapret работает, но сайт не отвечает. Возможно, провайдер сменил блокировку — нужна другая стратегия."
+        log "ОШИБКА: YouTube недоступен даже после перезапуска zapret."
+        status_report
+        exit 1
+    fi
+fi
+
+# 4. Открыть браузер
+open_browser
+exit 0
