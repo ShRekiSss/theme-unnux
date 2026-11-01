@@ -24,8 +24,13 @@ export SWWW_TRANSITION_TYPE=simple
 # This controls (in seconds) when to switch to the next image
 INTERVAL=120
 
+# защита от двойного запуска (второй ждал бы flock и ничего не крутил)
+exec 9>/tmp/обои-ротатор.lock
+flock -n 9 || exit 0
+
 while true; do
-	find "$1" \
+	find "$1" -maxdepth 1 -mindepth 1 -type f \
+		\( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) \
 		| while read -r img; do
 			echo "$((RANDOM % 1000)):$img"
 		done \
@@ -33,9 +38,9 @@ while true; do
 		| while read -r img; do
 			swww img -o $focused_monitor "$img"
 			# Regenerate colors from the exact image path to avoid cache races
-			$HOME/.config/hypr/scripts/WallustSwww.sh "$img"
-			# Refresh UI components that depend on wallust output
-			$wallust_refresh
+			# (таймаут: если модуль зависнет — ротатор не замирает)
+			timeout 15s "$HOME/.config/hypr/scripts/WallustSwww.sh" "$img" || true
+			timeout 15s "$wallust_refresh" || true
 			sleep $INTERVAL
 			
 		done
