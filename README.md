@@ -7,7 +7,7 @@ Alice: Madness Returns / Fran Bow, SDDM-тема Alice, панель снизу
 | Папка | Что это |
 |---|---|
 | `config/` | конфиги Hyprland, Waybar, Rofi, SwayNC, Wallust, Kitty и др. |
-| `scripts/` | свои скрипты:.gs обои вкл/выкл, памятка, меню питания, раскладка |
+| `scripts/` | свои скрипты: обои вкл/выкл, памятка, меню питания, раскладка |
 | `обои/` | 22 статичных арта + 4 видео-обоя (Alice + Чеширский кот) |
 | `sddm/` | SDDM-тема `alice-purple` |
 | `install.sh` | переносит всё на места (конфиги, скрипты, обои, SDDM) |
@@ -21,7 +21,7 @@ cd theme-unnux
 ```
 Требуется уже установленный Hyprland-стек (быстро — через
 [KooL Debian-Hyprland](https://github.com/LinuxBeginnings/Debian-Hyprland)
-с файлом `preset-danze.sh`:
+с файлом `preset-danze.sh` (в репо!):
 
 ## 🗝 Горячие клавиши (главное)
 - `Ctrl+Shift` — РУС/АНГЛ
