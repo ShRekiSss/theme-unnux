@@ -31,7 +31,7 @@ send_notification() {
         -h int:value:"$brightness" \
         -u low \
         -i "$icon_path" \
-        "Screen" "Brightness: ${brightness}%"
+        "Экран" "Яркость: ${brightness}%"
 }
 
 # Change brightness and notify
