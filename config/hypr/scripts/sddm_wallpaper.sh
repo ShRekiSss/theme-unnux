@@ -22,7 +22,7 @@ sddm_simple="$sddm_themes_dir/simple_sddm_2"
 rofi_wallust="$HOME/.config/rofi/wallust/colors-rofi.rasi"
 sddm_theme_conf="$sddm_simple/theme.conf"
 if [[ ! -f "$rofi_wallust" ]]; then
-    notify-send -i "$iDIR/error.png" "SDDM" "Wallust colors file not found ($rofi_wallust). Aborting."
+    notify-send -i "$iDIR/error.png" "SDDM" "Файл цветов wallust не найден. Прерываю."
     exit 1
 fi
 
@@ -41,11 +41,11 @@ fi
 # Abort if SDDM is not running (avoid errors on non-SDDM systems)
 if command -v systemctl >/dev/null 2>&1; then
     if ! systemctl is-active --quiet sddm; then
-        notify-send -i "$iDIR/error.png" "SDDM" "SDDM is not running. Skipping SDDM wallpaper update."
+        notify-send -i "$iDIR/error.png" "SDDM" "SDDM не запущен. Пропускаю смену фона."
         exit 0
     fi
 elif ! pidof sddm >/dev/null 2>&1; then
-    notify-send -i "$iDIR/error.png" "SDDM" "SDDM is not running. Skipping SDDM wallpaper update."
+    notify-send -i "$iDIR/error.png" "SDDM" "SDDM не запущен. Пропускаю смену фона."
     exit 0
 fi
 
@@ -88,7 +88,7 @@ fi
 
 # Abort on NixOS where this repo doesn't manage SDDM and themes are typically read-only
 if hostnamectl 2>/dev/null | grep -q 'Operating System: NixOS'; then
-    notify-send -i "$iDIR/error.png" "SDDM" "NixOS detected: skipping SDDM background change."
+    notify-send -i "$iDIR/error.png" "SDDM" "NixOS — смену фона пропускаю."
     exit 0
 fi
 
@@ -126,5 +126,5 @@ if [ -e \"$sddm_simple/Backgrounds/default.png\" ]; then
   sudo cp -f \"$wallpaper_path\" \"$sddm_simple/Backgrounds/default.png\"
 fi
 
-notify-send -i \"$iDIR/ja.png\" \"SDDM\" \"Background SET\"
+notify-send -i \"$iDIR/ja.png\" \"SDDM\" \"Фон установлен\"
 "
