@@ -19,7 +19,7 @@ if [ "$HYPRGAMEMODE" = 1 ] ; then
 	
 	hyprctl keyword "windowrule opacity 1 override 1 override 1 override, ^(.*)$"
     swww kill 
-    notify-send -e -u low -i "$notif" " Gamemode:" " enabled"
+    notify-send -e -u low -i "$notif" " Игровой режим:" " включён"
     sleep 0.1
     exit
 else
@@ -29,7 +29,7 @@ else
 	sleep 0.5
   hyprctl reload
 	${SCRIPTSDIR}/Refresh.sh	 
-    notify-send -e -u normal -i "$notif" " Gamemode:" " disabled"
+    notify-send -e -u normal -i "$notif" " Игровой режим:" " выключён"
     exit
 fi
 hyprctl reload
