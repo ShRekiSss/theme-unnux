@@ -16,7 +16,7 @@ active_window_class=$(hyprctl -j activewindow | jq -r '(.class)')
 active_window_file="Screenshot_${time}_${active_window_class}.png"
 active_window_path="${dir}/${active_window_file}"
 
-notify_cmd_base="notify-send -t 10000 -A action1=Open -A action2=Delete -h string:x-canonical-private-synchronous:shot-notify"
+notify_cmd_base="notify-send -t 10000 -A action1=Открыть -A action2=Удалить -h string:x-canonical-private-synchronous:shot-notify"
 notify_cmd_shot="${notify_cmd_base} -i ${iDIR}/picture.png "
 notify_cmd_shot_win="${notify_cmd_base} -i ${iDIR}/picture.png "
 notify_cmd_NOT="notify-send -u low -i ${iDoR}/note.png "
@@ -26,7 +26,7 @@ notify_view() {
     if [[ "$1" == "active" ]]; then
         if [[ -e "${active_window_path}" ]]; then
 			"${sDIR}/Sounds.sh" --screenshot        
-            resp=$(timeout 5 ${notify_cmd_shot_win} " Screenshot of:" " ${active_window_class} Saved.")
+            resp=$(timeout 5 ${notify_cmd_shot_win} " Скриншот:" " ${active_window_class} сохранён.")
             case "$resp" in
 				action1)
 					xdg-open "${active_window_path}" &
@@ -36,13 +36,13 @@ notify_view() {
 					;;
 			esac
         else
-            ${notify_cmd_NOT} " Screenshot of:" " ${active_window_class} NOT Saved."
+            ${notify_cmd_NOT} " Screenshot of:" " ${active_window_class} НЕ сохранён."
             "${sDIR}/Sounds.sh" --error
         fi
 
     elif [[ "$1" == "swappy" ]]; then
 		"${sDIR}/Sounds.sh" --screenshot
-		resp=$(${notify_cmd_shot} " Screenshot:" " Captured by Swappy")
+		resp=$(${notify_cmd_shot} " Screenshot:" " Открыто в Swappy")
 		case "$resp" in
 			action1)
 				swappy -f - <"$tmpfile"
@@ -56,7 +56,7 @@ notify_view() {
         local check_file="${dir}/${file}"
         if [[ -e "$check_file" ]]; then
             "${sDIR}/Sounds.sh" --screenshot
-            resp=$(timeout 5 ${notify_cmd_shot} " Screenshot" " Saved")
+            resp=$(timeout 5 ${notify_cmd_shot} " Скриншот" " Сохранён")
 			case "$resp" in
 				action1)
 					xdg-open "${check_file}" &
@@ -66,7 +66,7 @@ notify_view() {
 					;;
 			esac
         else
-            ${notify_cmd_NOT} " Screenshot" " NOT Saved"
+            ${notify_cmd_NOT} " Screenshot" " НЕ сохранён"
             "${sDIR}/Sounds.sh" --error
         fi
     fi
@@ -75,7 +75,7 @@ notify_view() {
 # countdown
 countdown() {
 	for sec in $(seq $1 -1 1); do
-		notify-send -h string:x-canonical-private-synchronous:shot-notify -t 1000 -i "$iDIR"/timer.png  " Taking shot" " in: $sec secs"
+		notify-send -h string:x-canonical-private-synchronous:shot-notify -t 1000 -i "$iDIR"/timer.png  " Скриншот" " через: $sec сек"
 		sleep 1
 	done
 }
