@@ -10,7 +10,7 @@ KooL_Dots_DIR="$HOME/Hyprland-Dots"
 
 # exit if cannot find local version
 if [ -z "$local_version" ]; then
-  notify-send -i "$iDIR/error.png" 'ERROR !?!?!!' "Unable to find KooL's dots version. Exiting."
+  notify-send -i "$iDIR/error.png" 'ОШИБКА!' "Не вижу версию дотфайлов KooL. Выход."
   exit 1
 fi
 
@@ -19,7 +19,7 @@ branch="main"
 github_url="https://github.com/JaKooLit/Hyprland-Dots/tree/$branch/config/hypr/"
 # Check for required tools (curl)
 if ! command -v curl &> /dev/null; then
-  notify-send -i "$iDIR/error.png" "Need curl:" "curl not found. Please install curl."
+  notify-send -i "$iDIR/error.png" "Нужен curl:" "curl не найден. Установи его."
   exit 1
 fi
 
@@ -28,17 +28,17 @@ github_version=$(curl -fsSL -A "Mozilla/5.0" "$github_url" | grep -o 'v[0-9]\+\.
 
 # Cant find  GitHub URL - KooL's dots version
 if [ -z "$github_version" ]; then
-  notify-send -i "$iDIR/error.png" 'KooL Hyprland:' "Unable to determine GitHub version."
+  notify-send -i "$iDIR/error.png" 'KooL Hyprland:' "Не удалось определить версию на GitHub."
   exit 1
 fi
 
 # Comparing local and github versions
 if [ "$(echo -e "$github_version\n$local_version" | sort -V | head -n 1)" = "$github_version" ]; then
-   notify-send -i "$iDIR/note.png" "KooL Hyprland:" "No update available"
+   notify-send -i "$iDIR/note.png" "KooL Hyprland:" "Обновлений нет"
   exit 0
 else
   # update available
-  notify_cmd_base="notify-send -t 10000 -A action1=Update -A action2=NO -h string:x-canonical-private-synchronous:shot-notify"
+  notify_cmd_base="notify-send -t 10000 -A action1=Обновить -A action2=Нет -h string:x-canonical-private-synchronous:shot-notify"
   notify_cmd_shot="${notify_cmd_base} -i $iDIR/ja.png"
 
   response=$($notify_cmd_shot "KooL Hyprland:" "Update available! Update now?")
@@ -47,7 +47,7 @@ else
     "action1")  
       if [ -d "$KooL_Dots_DIR" ]; then
       	if ! command -v kitty &> /dev/null; then
-  			notify-send -i "$iDIR/error.png" "E-R-R-O-R" "Kitty terminal not found. Please install Kitty terminal."
+  			notify-send -i "$iDIR/error.png" "ОШИБКА" "Нет терминала Kitty. Установи Kitty."
   			exit 1
 		fi
         kitty -e bash -c "
@@ -55,12 +55,12 @@ else
           git stash &&
           git pull &&
           ./copy.sh &&
-		  notify-send -u critical -i "$iDIR/ja.png" 'Update Completed:' 'Kindly log out and relogin to take effect'
+		  notify-send -u critical -i "$iDIR/ja.png" 'Обновление готово:' 'Выйди из системы и зайди снова'
         "
 	
       else
          if ! command -v kitty &> /dev/null; then
-  		  	notify-send -i "$iDIR/error.png" "E-R-R-O-R" "Kitty terminal not found. Please install Kitty terminal."
+  		  	notify-send -i "$iDIR/error.png" "ОШИБКА" "Нет терминала Kitty. Установи Kitty."
   			exit 1
 		fi
         kitty -e bash -c "
@@ -68,7 +68,7 @@ else
           cd \"$KooL_Dots_DIR\" &&
           chmod +x copy.sh &&
           ./copy.sh &&
-		  notify-send -u critical -i "$iDIR/ja.png" 'Update Completed:' 'Kindly log out and relogin to take effect'
+		  notify-send -u critical -i "$iDIR/ja.png" 'Обновление готово:' 'Выйди из системы и зайди снова'
         "
       fi
       ;;
