@@ -1,0 +1,15 @@
+configuration {
+    modi:              "drun,run,window";
+    font:              "JetBrainsMono Nerd Font 12";
+    show-icons:        true;
+    icon-theme:        "Flat-Remix-Blue-Dark";
+    display-drun:      "Запуск";
+    display-run:       "Команда";
+    display-window:    "Окна";
+    drun-display-format: "{name}";
+    location:          5;
+    hover-select:      true;
+    click-to-exit:     true;
+}
+
+@theme "~/.config/rofi/aurora.rasi"

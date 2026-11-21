@@ -1,0 +1,126 @@
+{
+  "$schema": "/etc/xdg/waybar/config.jsonc",
+  "layer": "top",
+  "position": "top",
+  "height": 40,
+  "spacing": 6,
+  "margin-top": 10,
+  "margin-left": 14,
+  "margin-right": 14,
+  "modules-left": ["custom/logo", "hyprland/workspaces", "hyprland/window", "mpris"],
+  "modules-center": ["clock"],
+  "modules-right": ["custom/notification", "tray", "cpu", "memory", "pulseaudio", "network", "custom/power"],
+
+  "custom/logo": {
+    "format": "◈  aurora",
+    "tooltip": false,
+    "on-click": "rofi -show drun"
+  },
+
+  "hyprland/workspaces": {
+    "format": "{name}",
+    "on-click": "activate",
+    "on-click-middle": "close",
+    "all-outputs": false,
+    "show-special": false,
+    "sort-by-number": true,
+    "persistent-workspaces": {
+      "*": 5
+    }
+  },
+
+  "hyprland/window": {
+    "format": "{title}",
+    "max-length": 52,
+    "separate-workspaces": false,
+    "tooltip": false
+  },
+
+  "mpris": {
+    "format": "{player_icon}  {title}",
+    "format-paused": "{player_icon}  {title}",
+    "format-stopped": "",
+    "player-icons": {
+      "default": "\uf001"
+    },
+    "max-length": 36,
+    "tooltip-format": "{player} · {album}\n{artist} — {title}",
+    "on-click": "playerctl play-pause",
+    "on-click-right": "playerctl next",
+    "on-scroll-up": "playerctl previous",
+    "on-scroll-down": "playerctl next",
+    "ignored-players": ["firefox"]
+  },
+
+  "clock": {
+    "format": "{:%H:%M}",
+    "format-alt": "{:%H:%M:%S  %d.%m.%Y}",
+    "tooltip-format": "<tt><small>{calendar}</small></tt>",
+    "calendar": {
+      "mode": "month",
+      "mode-mon-col": 3,
+      "weeks-pos": "right",
+      "on-scroll": 1,
+      "format": {
+        "months": "<span color='#5eead4'><b>{}</b></span>",
+        "days": "<span color='#c8d6e5'><b>{}</b></span>",
+        "weeks": "<span color='#8b9aab'><b>W{}</b></span>",
+        "weekdays": "<span color='#a78bfa'><b>{}</b></span>",
+        "today": "<span color='#04120f'><b><u>{}</u></b></span>"
+      }
+    }
+  },
+
+  "cpu": {
+    "interval": 3,
+    "format": "\uf2db  {usage}%",
+    "tooltip": true,
+    "on-click": "kitty -e btop"
+  },
+
+  "memory": {
+    "interval": 5,
+    "format": "\uf1c0  {percentage}%",
+    "tooltip-format": "{used:0.1f} / {total:0.1f} GiB"
+  },
+
+  "pulseaudio": {
+    "format": "{icon}  {volume}%",
+    "format-muted": "\uf026  выкл",
+    "format-icons": {
+      "default": ["\uf026", "\uf027", "\uf028"]
+    },
+    "scroll-step": 5,
+    "on-click": "pavucontrol",
+    "on-click-right": "wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle",
+    "tooltip-format": "{desc} · {volume}%"
+  },
+
+  "network": {
+    "interval": 5,
+    "format-wifi": "\uf1eb  {essid}",
+    "format-ethernet": "\uf0e8  {ipaddr}",
+    "format-disconnected": "\uf00d  нет сети",
+    "tooltip-format": "{ifname} · {ipaddr}/{cidr}\n{signalStrength}%",
+    "on-click": "nm-connection-editor"
+  },
+
+  "tray": {
+    "icon-size": 15,
+    "spacing": 10
+  },
+
+  "custom/notification": {
+    "format": "\uf0f3",
+    "tooltip": false,
+    "on-click": "swaync-client -t -sw",
+    "on-click-right": "swaync-client -d -sw",
+    "escape": true
+  },
+
+  "custom/power": {
+    "format": "\uf011",
+    "tooltip": "Выключение / выход",
+    "on-click": "wlogout -p layer-shell"
+  }
+}

@@ -1,0 +1,14 @@
+[SddmGreeterTheme]
+Name=Aurora
+Description=Aurora — teal & violet glass login theme
+Author=studen
+Copyright=(c) 2026 studen
+License=MIT
+Type=sddm-theme
+Version=1.0
+Screenshot=Backgrounds/aurora.jpg
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=aurora
+Theme-API=2.0
+QtVersion=6

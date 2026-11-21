@@ -1,0 +1,7 @@
+# временные/локальные файлы
+*.log
+*.tmp
+.DS_Store
+__pycache__/
+*.pyc
+aurora-backup-*/

@@ -1,0 +1,203 @@
+/* ══════════════════════════════════════════════════════════════
+   AURORA · waybar
+   палитра: #070b10 · #0c1117 · #e8f0f7 · teal #5eead4 · violet #a78bfa
+   ══════════════════════════════════════════════════════════════ */
+
+@define-color bg        rgba(10, 15, 22, 0.78);
+@define-color bg_solid  #0a0f16;
+@define-color surface   rgba(255, 255, 255, 0.05);
+@define-color text      #e8f0f7;
+@define-color muted     #93a4b5;
+@define-color dim       #6f8093;
+@define-color teal      #5eead4;
+@define-color violet    #a78bfa;
+@define-color pink      #f472b6;
+@define-color amber     #fbbf24;
+
+* {
+    font-family: "JetBrainsMono Nerd Font", "JetBrains Mono", monospace;
+    font-size: 13px;
+    font-weight: 500;
+    border: none;
+    border-radius: 0;
+    min-height: 0;
+    text-shadow: none;
+    box-shadow: none;
+}
+
+window#waybar {
+    background-image: linear-gradient(180deg,
+        rgba(13, 19, 27, 0.86) 0%,
+        rgba(8, 12, 18, 0.74) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.055);
+    border-radius: 16px;
+    color: @text;
+}
+
+.modules-left,
+.modules-center,
+.modules-right {
+    padding: 0 6px;
+}
+
+/* ── логотип ─────────────────────────────────────────────────── */
+#custom-logo {
+    color: @teal;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    padding: 0 14px 0 4px;
+    margin: 5px 0;
+}
+
+#custom-logo:hover {
+    color: @violet;
+}
+
+/* ── рабочие столы ───────────────────────────────────────────── */
+#workspaces {
+    background: transparent;
+    margin: 0 4px;
+}
+
+#workspaces button {
+    min-width: 25px;
+    padding: 0 7px;
+    margin: 5px 2px;
+    border-radius: 9px;
+    color: @dim;
+    background: transparent;
+    transition: all 180ms ease;
+}
+
+#workspaces button.occupied {
+    color: #c8d6e5;
+    background: rgba(255, 255, 255, 0.045);
+}
+
+#workspaces button.active {
+    color: #04120f;
+    font-weight: 700;
+    background-image: linear-gradient(135deg, @teal 0%, @violet 100%);
+}
+
+#workspaces button:hover {
+    color: @text;
+    background: rgba(94, 234, 212, 0.14);
+}
+
+#workspaces button.urgent {
+    color: @pink;
+    background: rgba(244, 114, 182, 0.16);
+}
+
+/* ── заголовок окна ──────────────────────────────────────────── */
+#window {
+    color: @muted;
+    font-size: 12.5px;
+    padding: 0 12px;
+    margin: 5px 2px;
+}
+
+window#waybar.empty #window {
+    background: transparent;
+    color: transparent;
+}
+
+/* ── плеер ───────────────────────────────────────────────────── */
+#mpris {
+    color: #c4b5fd;
+    font-style: italic;
+    font-size: 12.5px;
+    padding: 0 12px;
+    margin: 5px 2px;
+    border-radius: 9px;
+}
+
+#mpris:hover {
+    background: rgba(167, 139, 250, 0.12);
+    color: #ddd6fe;
+}
+
+/* ── часы ────────────────────────────────────────────────────── */
+#clock {
+    color: #f2fbff;
+    font-weight: 600;
+    letter-spacing: 1px;
+    padding: 0 18px;
+    margin: 5px 4px;
+    border-radius: 10px;
+    border: 1px solid rgba(94, 234, 212, 0.16);
+    background-image: linear-gradient(135deg,
+        rgba(94, 234, 212, 0.16) 0%,
+        rgba(167, 139, 250, 0.16) 100%);
+}
+
+/* ── правый блок ─────────────────────────────────────────────── */
+#cpu,
+#memory,
+#pulseaudio,
+#network,
+#custom-notification {
+    padding: 0 9px;
+    margin: 5px 1px;
+    border-radius: 9px;
+    color: #bcc9d7;
+}
+
+#cpu:hover,
+#memory:hover,
+#pulseaudio:hover,
+#network:hover,
+#custom-notification:hover {
+    color: @text;
+    background: @surface;
+}
+
+#custom-notification {
+    color: @violet;
+    font-size: 14px;
+}
+
+#pulseaudio.muted,
+#network.disconnected {
+    color: @pink;
+}
+
+#tray {
+    margin: 5px 4px;
+    padding: 0 4px;
+    border-radius: 9px;
+}
+
+#tray > .passive {
+    -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+    -gtk-icon-effect: highlight;
+}
+
+#custom-power {
+    color: @pink;
+    font-size: 14px;
+    padding: 0 12px;
+    margin: 5px 0 5px 2px;
+    border-radius: 9px;
+}
+
+#custom-power:hover {
+    color: #fff1f6;
+    background: rgba(244, 114, 182, 0.18);
+}
+
+/* ── подсказки ───────────────────────────────────────────────── */
+tooltip {
+    background: rgba(8, 12, 18, 0.97);
+    border: 1px solid rgba(94, 234, 212, 0.28);
+    border-radius: 12px;
+}
+
+tooltip label {
+    color: @text;
+    padding: 6px 8px;
+}

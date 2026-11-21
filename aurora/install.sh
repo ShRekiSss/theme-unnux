@@ -1,0 +1,299 @@
+#!/usr/bin/env bash
+# ============================================================================
+#   AURORA · универсальный установщик
+#   Работает на Debian / Kali / Ubuntu / Fedora / Arch / openSUSE / Alpine.
+#   Запуск:  sudo bash ~/aurora-dots/install.sh
+# ============================================================================
+
+set -uo pipefail
+
+SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+[[ -z "${SRC:-}" ]] && SRC="/home/studen/aurora-dots"
+
+say()  { printf '\n\033[1;36m▸ %s\033[0m\n' "$*"; }
+ok()   { printf '  \033[1;32m✓\033[0m %s\n' "$*"; }
+warn() { printf '  \033[1;33m!\033[0m %s\n' "$*"; }
+fail() { printf '\n\033[1;31m✗ %s\033[0m\n' "$*" >&2; exit 1; }
+
+# ── пользователь ────────────────────────────────────────────────────────────
+TARGET_USER="${SUDO_USER:-${TARGET_USER:-}}"
+if [[ -z "$TARGET_USER" || "$TARGET_USER" == "root" ]]; then
+    TARGET_USER="$(awk -F: '$3 >= 1000 && $7 !~ /(nologin|false)/ {print $1; exit}' /etc/passwd)"
+fi
+[[ -n "$TARGET_USER" ]] || fail "Не удалось определить пользователя. Запусти: sudo TARGET_USER=имя bash $0"
+TARGET_HOME="$(getent passwd "$TARGET_USER" | cut -d: -f6)"
+TARGET_HOME="${TARGET_HOME:-/home/$TARGET_USER}"
+TARGET_GROUP="$(id -gn "$TARGET_USER" 2>/dev/null || echo "$TARGET_USER")"
+
+[[ $EUID -eq 0 ]] || fail "Нужны права root:  sudo bash $0"
+
+# ── дистрибутив и пакетный менеджер ─────────────────────────────────────────
+ID=""; ID_LIKE=""; PRETTY_NAME="Linux"
+[[ -f /etc/os-release ]] && . /etc/os-release
+ID="${ID:-linux}"; ID_LIKE="${ID_LIKE:-}"; PRETTY_NAME="${PRETTY_NAME:-Linux}"
+
+case " $ID $ID_LIKE " in
+    *debian*|*ubuntu*|*kali*|*mint*|*pop*|*raspbian*) PM=apt   ;;
+    *fedora*|*rhel*|*centos*|*rocky*|*alma*)          PM=dnf   ;;
+    *arch*|*manjaro*|*endeavouros*|*cachyos*)         PM=pacman;;
+    *opensuse*|*suse*)                                PM=zypper;;
+    *alpine*)                                         PM=apk   ;;
+    *)
+        if   command -v apt-get   >/dev/null; then PM=apt
+        elif command -v dnf       >/dev/null; then PM=dnf
+        elif command -v pacman    >/dev/null; then PM=pacman
+        elif command -v zypper    >/dev/null; then PM=zypper
+        elif command -v apk       >/dev/null; then PM=apk
+        else fail "Неизвестный пакетный менеджер — установи пакеты вручную"
+        fi ;;
+esac
+say "Система: $PRETTY_NAME  ·  пакеты: $PM  ·  пользователь: $TARGET_USER"
+
+# ── обёртки над пакетным менеджером ─────────────────────────────────────────
+APT_LOG=/tmp/aurora-apt-update.log
+
+pkg_update() {
+    case "$PM" in
+    apt)
+        if apt-get update -o Acquire::Retries=2 >"$APT_LOG" 2>&1; then
+            return 0
+        fi
+        warn "apt update завершился ошибкой (лог: $APT_LOG)"
+        # Kali часто имеет ошибочные строки Debian с сюитой kali-rolling.
+        if [[ "$ID" == "kali" ]]; then
+            local bk="/etc/apt/aurora-backup-$(date +%Y%m%d-%H%M%S)"
+            mkdir -p "$bk/sources.list.d"
+            [[ -f /etc/apt/sources.list ]] && cp -a /etc/apt/sources.list "$bk/" 2>/dev/null || true
+            cp -a /etc/apt/sources.list.d/. "$bk/sources.list.d/" 2>/dev/null || true
+            local f changed=0
+            for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+                [[ -f "$f" ]] || continue
+                sed -i -E '/^[[:space:]]*#/! { /(deb\.debian\.org|security\.debian\.org)/ { /kali-rolling/ s/^/#AURORA-DISABLED / } }' "$f" || true
+                grep -q '^#AURORA-DISABLED' "$f" && changed=1
+            done
+            if (( changed )); then
+                say "Отключены несовместимые Debian-строки с kali-rolling (бэкап: $bk)"
+                if apt-get update -o Acquire::Retries=2 >>"$APT_LOG" 2>&1; then
+                    ok "репозитории обновлены"
+                    return 0
+                fi
+            fi
+        fi
+        warn "Продолжаем с кэшированными списками пакетов"
+        return 0 ;;
+    dnf)    dnf -y makecache                  >/dev/null 2>&1 || true ;;
+    pacman) pacman -Syu --noconfirm --needed  >/dev/null 2>&1 || true ;;
+    zypper) zypper --non-interactive refresh  >/dev/null 2>&1 || true ;;
+    apk)    apk update                        >/dev/null 2>&1 || true ;;
+    esac
+}
+
+pkg_install() {
+    case "$PM" in
+    apt)    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends "$@" ;;
+    dnf)    dnf -y install "$@" ;;
+    pacman) pacman -S --needed --noconfirm "$@" ;;
+    zypper) zypper --non-interactive install -y "$@" ;;
+    apk)    apk add --no-cache "$@" ;;
+    esac
+}
+
+# ── 1. пакеты ───────────────────────────────────────────────────────────────
+say "Пакеты"
+pkg_update
+
+case "$PM" in
+apt)
+    BASE_PKGS="swaybg sddm"
+    QML_PKGS="qml6-module-qtquick qml6-module-qtquick-window qml6-module-qtqml-workerscript"
+    QML_FALLBACK="qml-module-qtquick2 qml-module-qtquick-window2 qml-module-qtqml-workerscript"
+    HYPR_PKG="hyprland"
+    ;;
+*)  BASE_PKGS="swaybg sddm"
+    QML_PKGS="qt6-qtdeclarative"
+    QML_FALLBACK=""
+    HYPR_PKG="hyprland"
+    ;;
+esac
+
+pkg_install $BASE_PKGS || warn "Не удалось установить swaybg/sddm — проверь репозитории"
+if ! pkg_install $QML_PKGS; then
+    warn "Qt6 QML не установился"
+    [[ -n "$QML_FALLBACK" ]] && pkg_install $QML_FALLBACK || true
+fi
+
+# ── 2. Hyprland ─────────────────────────────────────────────────────────────
+say "Hyprland"
+HYPR_BIN="$(command -v Hyprland 2>/dev/null || true)"
+if [[ -z "$HYPR_BIN" ]]; then
+    HYPR_BIN="$(find /usr/local/bin /usr/bin /opt -maxdepth 3 -type f -name Hyprland -perm -u+x 2>/dev/null | head -1)"
+fi
+if [[ -z "$HYPR_BIN" ]]; then
+    warn "Hyprland не найден — пробую установить из репозитория"
+    pkg_install "$HYPR_PKG" || true
+    HYPR_BIN="$(command -v Hyprland 2>/dev/null || true)"
+fi
+if [[ -z "$HYPR_BIN" ]]; then
+    warn "Hyprland не установлен. Конфиг и сессия будут готовы, но сам композитор нужно доустановить:"
+    warn "  Debian/Kali: sudo apt install hyprland   ·   Arch: sudo pacman -S hyprland"
+else
+    ok "$HYPR_BIN"
+fi
+
+HV="0.0.0"
+if [[ -n "$HYPR_BIN" ]]; then
+    # Hyprland --version требует XDG_RUNTIME_DIR (под sudo его может не быть)
+    VRT="/tmp/aurora-hypr-ver-$$"
+    mkdir -p "$VRT" && chmod 700 "$VRT"
+    HV="$(XDG_RUNTIME_DIR="$VRT" "$HYPR_BIN" --version 2>&1 | grep -oE '[0-9]+\.[0-9]+(\.[0-9]+)?' | head -1)"
+    rmdir "$VRT" 2>/dev/null || true
+    if [[ -z "$HV" ]]; then
+        HV="$(grep -aoE 'v?0\.[0-9]+\.[0-9]+' "$HYPR_BIN" 2>/dev/null | head -1 | tr -d 'v')"
+    fi
+    [[ -z "$HV" ]] && HV="0.0.0"
+fi
+HMAJ="${HV%%.*}"; HREST="${HV#*.}"; HMIN="${HREST%%.*}"; HMIN="${HMIN:-0}"
+if (( HMAJ > 0 || HMIN >= 53 )); then
+    HYPR_CONF="hyprland.conf"
+else
+    HYPR_CONF="hyprland-legacy.conf"
+fi
+say "Версия Hyprland: $HV → конфиг $HYPR_CONF"
+
+# ── 3. конфиги пользователя ─────────────────────────────────────────────────
+say "Конфиги в $TARGET_HOME/.config"
+BK="$TARGET_HOME/.config/aurora-backup-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$BK"
+
+deploy() {
+    local src="$1" dst="$2" rel="${2#$TARGET_HOME/.config/}"
+    [[ -f "$src" ]] || { warn "нет файла $src"; return; }
+    mkdir -p "$(dirname "$dst")"
+    if [[ -f "$dst" ]]; then
+        mkdir -p "$BK/$(dirname "$rel")"
+        cp -a "$dst" "$BK/$rel" 2>/dev/null || true
+    fi
+    install -m 644 "$src" "$dst"
+    chown "$TARGET_USER:$TARGET_GROUP" "$dst" 2>/dev/null || true
+}
+
+deploy "$SRC/$HYPR_CONF"                  "$TARGET_HOME/.config/hypr/hyprland.conf"
+deploy "$SRC/dotfiles/hypr/hyprlock.conf" "$TARGET_HOME/.config/hypr/hyprlock.conf"
+deploy "$SRC/dotfiles/hypr/hypridle.conf" "$TARGET_HOME/.config/hypr/hypridle.conf"
+deploy "$SRC/dotfiles/hypr/avatar.png"    "$TARGET_HOME/.config/hypr/avatar.png"
+for f in "$SRC"/dotfiles/hypr/scripts/*.sh; do
+    deploy "$f" "$TARGET_HOME/.config/hypr/scripts/$(basename "$f")"
+    chmod +x "$TARGET_HOME/.config/hypr/scripts/$(basename "$f")" 2>/dev/null || true
+done
+deploy "$SRC/dotfiles/waybar/config.jsonc" "$TARGET_HOME/.config/waybar/config.jsonc"
+deploy "$SRC/dotfiles/waybar/style.css"    "$TARGET_HOME/.config/waybar/style.css"
+deploy "$SRC/dotfiles/rofi/config.rasi"    "$TARGET_HOME/.config/rofi/config.rasi"
+deploy "$SRC/dotfiles/rofi/aurora.rasi"    "$TARGET_HOME/.config/rofi/aurora.rasi"
+deploy "$SRC/dotfiles/kitty/kitty.conf"    "$TARGET_HOME/.config/kitty/kitty.conf"
+deploy "$SRC/dotfiles/swaync/config.json"  "$TARGET_HOME/.config/swaync/config.json"
+deploy "$SRC/dotfiles/swaync/style.css"    "$TARGET_HOME/.config/swaync/style.css"
+deploy "$SRC/dotfiles/wlogout/layout"      "$TARGET_HOME/.config/wlogout/layout"
+deploy "$SRC/dotfiles/wlogout/style.css"   "$TARGET_HOME/.config/wlogout/style.css"
+ok "бэкап старых конфигов: $BK"
+
+# пути и бинарники под эту машину
+sed -i "s#/home/[^/]\+#$TARGET_HOME#g" "$TARGET_HOME/.config/hypr/hyprlock.conf" 2>/dev/null || true
+POLKIT="$(command -v hyprpolkitagent 2>/dev/null || find /usr/libexec /usr/lib -maxdepth 3 -name hyprpolkitagent -type f 2>/dev/null | head -1)"
+if [[ -n "$POLKIT" ]]; then
+    sed -i "s#/usr/libexec/hyprpolkitagent#$POLKIT#g" "$TARGET_HOME/.config/hypr/hyprland.conf" 2>/dev/null || true
+else
+    sed -i 's#^exec-once = /usr/libexec/hyprpolkitagent#exec-once = true # hyprpolkitagent не найден#' "$TARGET_HOME/.config/hypr/hyprland.conf" 2>/dev/null || true
+fi
+
+# ── 4. шрифты, обои, тема SDDM ──────────────────────────────────────────────
+say "Шрифты и обои"
+FONT_DIR="/usr/local/share/fonts/jetbrains-mono-nerd"
+mkdir -p "$FONT_DIR"
+install -m 644 "$SRC"/fonts/*.ttf "$FONT_DIR/" 2>/dev/null || true
+fc-cache -f >/dev/null 2>&1 || true
+
+WALL_DIR="$TARGET_HOME/.local/share/wallpapers/aurora"
+mkdir -p "$WALL_DIR"
+install -m 644 "$SRC"/wallpapers/*.png "$WALL_DIR/" 2>/dev/null || true
+chown -R "$TARGET_USER:$TARGET_GROUP" "$WALL_DIR" 2>/dev/null || true
+
+say "Тема SDDM «Aurora»"
+THEME_DIR=/usr/share/sddm/themes/aurora
+mkdir -p "$THEME_DIR"
+cp -a "$SRC/sddm/aurora/." "$THEME_DIR/"
+find "$THEME_DIR" -type d -exec chmod 755 {} \; 2>/dev/null || true
+find "$THEME_DIR" -type f -exec chmod 644 {} \; 2>/dev/null || true
+# если доступен только Qt5 — адаптируем тему
+if [[ "$PM" == "apt" ]] && ! dpkg -l qml6-module-qtquick 2>/dev/null | grep -q '^ii' \
+   && dpkg -l qml-module-qtquick2 2>/dev/null | grep -q '^ii'; then
+    sed -i 's/^QtVersion=6$/QtVersion=5/' "$THEME_DIR/metadata.desktop" || true
+    warn "использована Qt5-версия темы"
+fi
+ok "$THEME_DIR"
+
+# ── 5. сессия Hyprland в меню входа ─────────────────────────────────────────
+STARTER="$(command -v start-hyprland 2>/dev/null || echo "${HYPR_BIN:-/usr/bin/Hyprland}")"
+for d in /usr/share/wayland-sessions /usr/local/share/wayland-sessions; do
+    mkdir -p "$d"
+    if [[ ! -f "$d/hyprland.desktop" ]]; then
+        cat > "$d/hyprland.desktop" <<EOF
+[Desktop Entry]
+Name=Hyprland
+Comment=Aurora · dynamic tiling Wayland compositor
+Exec=$STARTER
+Type=Application
+DesktopNames=Hyprland
+Keywords=tiling;wayland;compositor;aurora;
+EOF
+        chmod 644 "$d/hyprland.desktop"
+        ok "$d/hyprland.desktop"
+    fi
+done
+
+# ── 6. конфиг и включение SDDM ──────────────────────────────────────────────
+say "SDDM как менеджер входа"
+mkdir -p /etc/sddm.conf.d
+cat > /etc/sddm.conf.d/zz-aurora.conf <<'EOF'
+[General]
+DisplayServer=x11
+Numlock=on
+
+[Theme]
+Current=aurora
+EOF
+
+if command -v systemctl >/dev/null 2>&1; then
+    for dm in lightdm gdm sddm display-manager; do
+        systemctl disable "$dm.service" >/dev/null 2>&1 || true
+    done
+    systemctl enable sddm.service >/dev/null 2>&1 || true
+    systemctl set-default graphical.target >/dev/null 2>&1 || true
+    ok "systemd: sddm включён"
+else
+    warn "systemd не найден — включи sddm в своей init-системе вручную"
+fi
+
+echo /usr/bin/sddm > /etc/X11/default-display-manager 2>/dev/null || true
+if [[ -d /etc/sysconfig ]]; then
+    echo 'DISPLAYMANAGER=/usr/bin/sddm' > /etc/sysconfig/desktop 2>/dev/null || true
+    echo 'DISPLAYMANAGER="sddm"' > /etc/sysconfig/displaymanager 2>/dev/null || true
+fi
+
+cat <<EOF
+
+────────────────────────────────────────────────────────────
+  Aurora готова.
+
+  Перезагрузись:  sudo systemctl reboot   (или просто reboot)
+
+  В меню входа SDDM:
+      пользователь  $TARGET_USER
+      сессия        Hyprland  (кнопки под полем пароля)
+
+  Запасной вариант — сессия Xfce в том же меню.
+  Старые конфиги сохранены в: $BK
+
+  Откат DM:  sudo systemctl enable --now lightdm
+  Проверка:  Hyprland --verify-config -c ~/.config/hypr/hyprland.conf
+────────────────────────────────────────────────────────────
+EOF

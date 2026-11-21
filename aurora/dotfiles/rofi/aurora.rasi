@@ -1,0 +1,110 @@
+/* ══════════════════════════════════════════════════════════════
+   AURORA · rofi
+   ══════════════════════════════════════════════════════════════ */
+
+* {
+    bg:             #0b1118f2;
+    bg2:            #121c27f2;
+    bg3:            #18242f;
+    fg:             #e8f0f7;
+    muted:          #8b9aab;
+    dim:            #5f7183;
+    accent:         #5eead4;
+    accent2:        #a78bfa;
+    urgent:         #f472b6;
+
+    background-color: transparent;
+    text-color:     @fg;
+    font:           "JetBrainsMono Nerd Font 12";
+    margin:         0;
+    padding:        0;
+    border:         0;
+    spacing:        0;
+}
+
+window {
+    width:          680px;
+    padding:        16px;
+    border-radius:  20px;
+    background-color: @bg;
+    border:         1px solid;
+    border-color:   rgba(94, 234, 212, 0.32);
+}
+
+mainbox {
+    spacing:        12px;
+    padding:        0;
+}
+
+inputbar {
+    background-color: @bg2;
+    border-radius:  13px;
+    padding:        13px 16px;
+    spacing:        12px;
+    children:       [ prompt, entry ];
+}
+
+prompt {
+    text-color:     @accent;
+    font:           "JetBrainsMono Nerd Font 13";
+}
+
+entry {
+    placeholder:      "Поиск приложений…";
+    placeholder-color: @dim;
+    cursor:           text;
+    text-color:       @fg;
+}
+
+case-indicator {
+    text-color:     @muted;
+}
+
+listview {
+    lines:          9;
+    columns:        2;
+    spacing:        8px;
+    padding:        0;
+    scrollbar:      false;
+    fixed-height:   false;
+    dynamic:        true;
+}
+
+element {
+    padding:        9px 10px;
+    spacing:        10px;
+    border-radius:  11px;
+    background-color: rgba(255, 255, 255, 0.028);
+}
+
+element selected {
+    background-color: @bg3;
+    border:         1px solid;
+    border-color:   rgba(94, 234, 212, 0.34);
+    text-color:     @fg;
+}
+
+element-icon {
+    size:           26px;
+    background-color: transparent;
+}
+
+element-text {
+    vertical-align: 0.5;
+    text-color:     inherit;
+}
+
+element-text selected {
+    text-color:     @accent;
+}
+
+element urgent {
+    text-color:     @urgent;
+}
+
+scrollbar {
+    width:          4px;
+    border-radius:  2px;
+    background-color: transparent;
+    handle-color:   rgba(94, 234, 212, 0.35);
+}
