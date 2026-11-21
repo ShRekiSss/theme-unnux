@@ -10,7 +10,7 @@
 ## Установка (любой Linux)
 
 Установщик сам определяет дистрибутив и пакетный менеджер:
-**apt** (Debian / Kali / Ubuntu / Mint), **dnf** (Fedora / RHEL), **pacman** (Arch / Manjaro), **zypper** (openSUSE), **apk** (Alpine).
+**apt** (Debian / Kali / Ubuntu / Mint), **dnf** (Fedora / RHEL), **pacman** (Arch / Manjaro), **zypper** (openSUSE), **apk** (Alpine). Unsupported init-системы получают понятное предупреждение.
 
 ```bash
 sudo bash ~/aurora-dots/install.sh
@@ -32,9 +32,12 @@ sudo systemctl reboot    # или просто reboot
 | 4 | копирует конфиги Waybar / Rofi / kitty / swaync / wlogout / hyprlock / hypridle |
 | 5 | ставит шрифты, обои, аватар и тему SDDM в `/usr/share/sddm/themes/aurora` |
 | 6 | добавляет сессию Hyprland в `/usr/share/wayland-sessions` и `/usr/local/share/...` |
-| 7 | отключает lightdm/gdm, включает SDDM, пишет настройки DM для systemd и SysV |
+| 7 | отключает lightdm/gdm, включает SDDM (systemd / OpenRC / runit / SysV) |
+| 8 | в VM создаёт `hyprland-aurora` с софтверным EGL; на железе — прямой запуск |
 
 **Все прежние конфиги сохраняются** в `~/.config/aurora-backup-ДАТА/`.
+
+Версия дистрибутива **не меняется** — установщик не трогает `/etc/os-release`, `/etc/debian_version` и `/etc/lsb-release`. При битых репозиториях Kali он только комментирует неверные строки с бэкапом в `/etc/apt/aurora-backup-*`.
 
 После перезагрузки в SDDM: пользователь `studen`, сессия **Hyprland**
 (кнопки сессий под полем ввода пароля). Запасной вариант — **Xfce** в том же меню.

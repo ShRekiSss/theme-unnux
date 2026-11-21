@@ -49,6 +49,17 @@ case " $ID $ID_LIKE " in
 esac
 say "Система: $PRETTY_NAME  ·  пакеты: $PM  ·  пользователь: $TARGET_USER"
 
+# Важно: НЕ трогаем /etc/os-release, /etc/debian_version, /etc/lsb-release —
+# версия дистрибутива остаётся как есть. Меняются только конфиги приложений
+# и (при явной поломке) кривые строки репозиториев — с бэкапом.
+VIRT="$(command -v systemd-detect-virt >/dev/null 2>&1 && systemd-detect-virt 2>/dev/null || true)"
+DMI="$(cat /sys/class/dmi/id/product_name 2>/dev/null || true)"
+case "$VIRT $DMI" in
+    *virtualbox*|*vmware*|*oracle*|*qemu*|*VirtualBox*|*VMware*|*QEMU*) IS_VM=1 ;;
+    *) IS_VM=0 ;;
+esac
+(( IS_VM )) && say "Обнаружена виртуальная машина — включу софтверный EGL"
+
 # ── обёртки над пакетным менеджером ─────────────────────────────────────────
 APT_LOG=/tmp/aurora-apt-update.log
 
@@ -233,10 +244,28 @@ ok "$THEME_DIR"
 
 # ── 5. сессия Hyprland в меню входа ─────────────────────────────────────────
 STARTER="$(command -v start-hyprland 2>/dev/null || echo "${HYPR_BIN:-/usr/bin/Hyprland}")"
+if (( IS_VM )) && command -v Hyprland >/dev/null 2>&1; then
+    # В VM (VirtualBox/VMware) EGL часто падает без софтверного рендера
+    cat > /usr/local/bin/hyprland-aurora <<EOF
+#!/bin/sh
+unset DISPLAY
+export XDG_SESSION_TYPE=wayland
+export EGL_PLATFORM=gbm
+export LIBGL_ALWAYS_SOFTWARE=1
+export MESA_LOADER_DRIVER_OVERRIDE=swrast
+export WLR_NO_HARDWARE_CURSORS=1
+exec ${HYPR_BIN:-/usr/local/bin/Hyprland} "\$@"
+EOF
+    chmod 755 /usr/local/bin/hyprland-aurora
+    STARTER=/usr/local/bin/hyprland-aurora
+    ok "софтверный EGL: /usr/local/bin/hyprland-aurora"
+fi
+
 for d in /usr/share/wayland-sessions /usr/local/share/wayland-sessions; do
     mkdir -p "$d"
-    if [[ ! -f "$d/hyprland.desktop" ]]; then
-        cat > "$d/hyprland.desktop" <<EOF
+    f="$d/hyprland.desktop"
+    [[ -f "$f" ]] && cp -a "$f" "$f.aurora-bak" 2>/dev/null || true
+    cat > "$f" <<EOF
 [Desktop Entry]
 Name=Hyprland
 Comment=Aurora · dynamic tiling Wayland compositor
@@ -245,10 +274,10 @@ Type=Application
 DesktopNames=Hyprland
 Keywords=tiling;wayland;compositor;aurora;
 EOF
-        chmod 644 "$d/hyprland.desktop"
-        ok "$d/hyprland.desktop"
-    fi
+    chmod 644 "$f"
+    ok "$f → $STARTER"
 done
+rm -f /usr/local/share/wayland-sessions/hyprland-uwsm.desktop 2>/dev/null || true
 
 # ── 6. конфиг и включение SDDM ──────────────────────────────────────────────
 say "SDDM как менеджер входа"
@@ -262,6 +291,20 @@ Numlock=on
 Current=aurora
 EOF
 
+# Главный /etc/sddm.conf имеет наивысший приоритет — правим и его (с бэкапом)
+if [[ -f /etc/sddm.conf ]]; then
+    cp -a /etc/sddm.conf /etc/sddm.conf.aurora-bak 2>/dev/null || true
+    if grep -q '^\[Theme\]' /etc/sddm.conf; then
+        sed -i '/^\[Theme\]/,/^\[/ s/^Current=.*/Current=aurora/' /etc/sddm.conf
+    else
+        printf '\n[Theme]\nCurrent=aurora\n' >> /etc/sddm.conf
+    fi
+else
+    printf '[Theme]\nCurrent=aurora\n' > /etc/sddm.conf
+fi
+ok "тема SDDM: aurora"
+
+SDDM_BIN="$(command -v sddm 2>/dev/null || echo /usr/bin/sddm)"
 if command -v systemctl >/dev/null 2>&1; then
     for dm in lightdm gdm sddm display-manager; do
         systemctl disable "$dm.service" >/dev/null 2>&1 || true
@@ -269,13 +312,26 @@ if command -v systemctl >/dev/null 2>&1; then
     systemctl enable sddm.service >/dev/null 2>&1 || true
     systemctl set-default graphical.target >/dev/null 2>&1 || true
     ok "systemd: sddm включён"
+elif command -v rc-update >/dev/null 2>&1; then
+    rc-update del lightdm default 2>/dev/null || true
+    rc-update add sddm default 2>/dev/null || true
+    ok "OpenRC: sddm включён"
+elif [[ -d /etc/sv/sddm && -d /var/service ]]; then
+    ln -sf /etc/sv/sddm /var/service/sddm 2>/dev/null || true
+    ok "runit: sddm включён"
+elif command -v update-rc.d >/dev/null 2>&1; then
+    update-rc.d lightdm disable >/dev/null 2>&1 || true
+    update-rc.d sddm defaults >/dev/null 2>&1 || true
+    ok "SysV: sddm включён"
 else
-    warn "systemd не найден — включи sddm в своей init-системе вручную"
+    warn "Неизвестная init-система — включи sddm вручную"
 fi
 
-echo /usr/bin/sddm > /etc/X11/default-display-manager 2>/dev/null || true
+# Специфичные для дистрибутивов файлы выбора DM (только DM, не версию!)
+mkdir -p "$(dirname /etc/X11/default-display-manager)" 2>/dev/null || true
+echo "$SDDM_BIN" > /etc/X11/default-display-manager 2>/dev/null || true
 if [[ -d /etc/sysconfig ]]; then
-    echo 'DISPLAYMANAGER=/usr/bin/sddm' > /etc/sysconfig/desktop 2>/dev/null || true
+    echo "DISPLAYMANAGER=$SDDM_BIN" > /etc/sysconfig/desktop 2>/dev/null || true
     echo 'DISPLAYMANAGER="sddm"' > /etc/sysconfig/displaymanager 2>/dev/null || true
 fi
 
