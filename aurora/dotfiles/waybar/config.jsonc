@@ -7,7 +7,7 @@
   "margin-top": 10,
   "margin-left": 14,
   "margin-right": 14,
-  "modules-left": ["custom/logo", "hyprland/workspaces", "hyprland/window", "mpris"],
+  "modules-left": ["custom/logo", "custom/dock-browser", "custom/dock-files", "custom/dock-terminal", "custom/dock-volume", "hyprland/workspaces", "hyprland/window", "mpris"],
   "modules-center": ["clock"],
   "modules-right": ["custom/notification", "tray", "cpu", "memory", "pulseaudio", "network", "custom/power"],
 
@@ -17,6 +17,30 @@
     "on-click": "rofi -show drun"
   },
 
+
+  "custom/dock-browser": {
+    "format": "\uf89e",
+    "tooltip": "Firefox",
+    "on-click": "firefox"
+  },
+
+  "custom/dock-files": {
+    "format": "\uf07c",
+    "tooltip": "Thunar",
+    "on-click": "thunar"
+  },
+
+  "custom/dock-terminal": {
+    "format": "\uf489",
+    "tooltip": "kitty",
+    "on-click": "kitty"
+  },
+
+  "custom/dock-volume": {
+    "format": "\uf028",
+    "tooltip": "Звук",
+    "on-click": "pavucontrol"
+  },
   "hyprland/workspaces": {
     "format": "{name}",
     "on-click": "activate",

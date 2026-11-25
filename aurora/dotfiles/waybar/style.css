@@ -53,6 +53,26 @@ window#waybar {
     color: @violet;
 }
 
+
+/* ── ярлыки-лаунчеры (как на Windows) ───────────────────────── */
+#custom-dock-browser,
+#custom-dock-files,
+#custom-dock-terminal,
+#custom-dock-volume {
+    font-size: 16px;
+    color: #b7c8d8;
+    padding: 0 9px;
+    margin: 5px 1px;
+    border-radius: 9px;
+}
+
+#custom-dock-browser:hover,
+#custom-dock-files:hover,
+#custom-dock-terminal:hover,
+#custom-dock-volume:hover {
+    color: @teal;
+    background: rgba(94, 234, 212, 0.13);
+}
 /* ── рабочие столы ───────────────────────────────────────────── */
 #workspaces {
     background: transparent;
