@@ -13,8 +13,11 @@
 **apt** (Debian / Kali / Ubuntu / Mint), **dnf** (Fedora / RHEL), **pacman** (Arch / Manjaro), **zypper** (openSUSE), **apk** (Alpine). Unsupported init-системы получают понятное предупреждение.
 
 ```bash
-sudo bash ~/aurora-dots/install.sh
-sudo systemctl reboot    # или просто reboot
+sudo bash ~/aurora-dots/install.sh           # авто-выбор по дистрибутиву
+# или явно:
+sudo bash ~/aurora-dots/install-debian.sh    # Debian / Ubuntu / Mint / Fedora / Arch …
+sudo bash ~/aurora-dots/install-kali.sh      # Kali Linux (отдельный файл)
+sudo systemctl reboot
 ```
 
 В Kali он также починит типичную проблему с репозиториями: отключит ошибочные строки
@@ -82,7 +85,9 @@ sudo systemctl reboot    # или просто reboot
 
 ```
 ~/aurora-dots/
-├── install.sh               универсальный установщик
+├── install.sh               диспетчер (выбирает нужный файл)
+├── install-debian.sh        установка для Debian и других дистрибутивов
+├── install-kali.sh          отдельная установка для Kali Linux
 ├── hyprland.conf            конфиг для Hyprland 0.53+
 ├── hyprland-legacy.conf     конфиг для Hyprland < 0.53
 ├── dotfiles/                конфиги, которые копируются в ~/.config
