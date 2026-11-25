@@ -1,6 +1,6 @@
 # ◈ Aurora
 
-Тёмная бирюзово-фиолетовая конфигурация **Hyprland**, панель Waybar, уведомления и тема входа **SDDM**.
+Один билд: проверенная **Debian/KooL-база** (все скрипты и комбинации) + **Aurora-стиль** (teal→violet glass, QML-тема SDDM).
 
 ```
         teal #5eead4   violet #a78bfa   pink #f472b6
@@ -13,10 +13,10 @@
 **apt** (Debian / Kali / Ubuntu / Mint), **dnf** (Fedora / RHEL), **pacman** (Arch / Manjaro), **zypper** (openSUSE), **apk** (Alpine). Unsupported init-системы получают понятное предупреждение.
 
 ```bash
-sudo bash ~/aurora-dots/install.sh           # авто-выбор по дистрибутиву
-# или явно:
-sudo bash ~/aurora-dots/install-debian.sh    # Debian / Ubuntu / Mint / Fedora / Arch …
-sudo bash ~/aurora-dots/install-kali.sh      # Kali Linux (отдельный файл)
+sudo bash ~/aurora-dots/install.sh           # единый установщик (Debian/Kali и др.)
+# псевдонимы для совместимости:
+sudo bash ~/aurora-dots/install-debian.sh
+sudo bash ~/aurora-dots/install-kali.sh
 sudo systemctl reboot
 ```
 
@@ -31,7 +31,7 @@ sudo systemctl reboot
 |-----|----------|
 | 1 | обновляет репозитории (с авто-починкой для Kali), ставит `swaybg`, `sddm`, Qt6 QML |
 | 2 | если Hyprland не найден — ставит пакет `hyprland`; определяет версию |
-| 3 | кладёт конфиг под версию: `hyprland.conf` (0.53+) или `hyprland-legacy.conf` (старее) |
+| 3 | копирует Debian-базу (`config/`, `scripts/`, `обои/`) и подключает `AuroraStyle.conf` последним source |
 | 4 | копирует конфиги Waybar / Rofi / kitty / swaync / wlogout / hyprlock / hypridle |
 | 5 | ставит шрифты, обои, аватар и тему SDDM в `/usr/share/sddm/themes/aurora` |
 | 6 | добавляет сессию Hyprland в `/usr/share/wayland-sessions` и `/usr/local/share/...` |
