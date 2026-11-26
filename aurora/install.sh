@@ -189,6 +189,15 @@ if [[ -d "$REPO/config/hypr" ]]; then
     done
     cp -a "$REPO/config/." "$TARGET_HOME/.config/"
 
+    # В Kali/Debian-базе нет swww-daemon — ставим swaybg как обработчик обоев
+    SWFILE="$TARGET_HOME/.config/hypr/configs/Startup_Apps.conf"
+    if [[ -f "$SWFILE" ]]; then
+        sed -i 's|^exec-once = swww-daemon --format xrgb|# swww-daemon не установлен|' "$SWFILE"
+        if ! grep -q '^exec-once = swaybg' "$SWFILE"; then
+            sed -i '/# swww-daemon не установлен/a exec-once = swaybg -i $HOME/.local/share/wallpapers/aurora/aurora.png -m fill' "$SWFILE"
+        fi
+    fi
+
     mkdir -p "$TARGET_HOME/.local/bin" "$TARGET_HOME/Обои"
     cp -a "$REPO/scripts/." "$TARGET_HOME/.local/bin/" 2>/dev/null || true
     chmod +x "$TARGET_HOME"/.local/bin/* 2>/dev/null || true
